@@ -183,7 +183,7 @@ pub fn logical_core_on() -> std::io::Result<bool> {
 /// Special on Linux to get CPU brand series.
 /// If you want to get the whole information, 
 /// use `get_vendor_id_and_brand()` instead.
-pub fn get_cpu_type() -> Option<String>{
+pub fn get_cpu_series() -> Option<String>{
     let (_, brand) = get_vendor_id_and_brand();
     let mut split_white_space = brand.split_whitespace();
 
