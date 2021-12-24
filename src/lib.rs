@@ -81,7 +81,7 @@ pub use traits::{
 };
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
-pub use sys::processor::{get_physical_core_count, get_vendor_id_and_brand};
+use sys::processor::{get_physical_core_count, get_vendor_id_and_brand};
 
 
 #[cfg(feature = "c-interface")]
@@ -144,6 +144,78 @@ pub fn set_open_files_limit(mut _new_limit: isize) -> bool {
         }
     }
 }
+
+/// special for Linux to read some information and print it.
+pub fn system_info_read(){
+    let mut sys = System::new_all();
+    sys.refresh_all();
+    println!("System Name {:?}", sys.name().unwrap());
+    println!("Processes Number {:?}", sys.processes().len());
+    let total_processors = sys.processors();
+    println!("Processor Number {:?}", total_processors.len());
+
+    let s = get_physical_core_count();
+    println!("Physical Core Count {:?}", s);
+
+    let (id, brand) = get_vendor_id_and_brand();
+    println!("Id {:?} Brand {:?} ", id, brand);
+
+}
+
+/// Special for Linux to check if logic core is on.
+/// Will return Err when "Cannot read `/proc/cpuinfo` file".
+pub fn logical_core_on() -> std::io::Result<bool> {
+    let mut sys = System::new_all();
+    sys.refresh_all();
+    let total_processors = sys.processors().len();
+
+    let physical_processors  = match get_physical_core_count(){
+        Some(processors) => processors,
+        None => {
+            let std_io_error = std::io::Error::last_os_error();
+            return Err(std_io_error)
+        },
+    };
+
+    Ok(physical_processors == total_processors)
+}
+
+/// Special on Linux to get CPU brand series.
+/// If you want to get the whole information, 
+/// use `get_vendor_id_and_brand()` instead.
+pub fn get_cpu_type() -> Option<String>{
+    let (_, brand) = get_vendor_id_and_brand();
+    let mut split_white_space = brand.split_whitespace();
+
+    fn into_string(s: Option<&str>) -> Option<String>{
+        let string = if let Some(s) = s{
+            String::from(s)
+        } else{
+            return None
+        };
+        Some(string)
+    }
+    
+    // as AMD or INTEL
+    let _manufature = into_string( split_white_space.next());
+    
+    // as EPYC or XEON
+    let _brand = into_string( split_white_space.next());
+    
+    // as E3/E5/E7... for INTEL XEON,  7601/7551/7501... for AMD EPYC
+    let _series = into_string( split_white_space.next());
+
+    // as 32/64/128...
+    let _cores = into_string( split_white_space.next());
+
+    // as Process, useless str
+    let _processor_str = into_string( split_white_space.next());
+
+    _series
+
+}
+
+
 
 #[cfg(test)]
 mod test {
