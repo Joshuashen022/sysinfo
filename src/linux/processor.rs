@@ -257,6 +257,7 @@ pub fn get_cpu_frequency(cpu_core_index: usize) -> u64 {
         .unwrap_or_default()
 }
 
+#[allow(missing_docs)]
 pub fn get_physical_core_count() -> Option<usize> {
     let mut s = String::new();
     if let Err(_e) = File::open("/proc/cpuinfo").and_then(|mut f| f.read_to_string(&mut s)) {

@@ -80,6 +80,10 @@ pub use traits::{
     ComponentExt, DiskExt, NetworkExt, NetworksExt, ProcessExt, ProcessorExt, SystemExt, UserExt,
 };
 
+#[cfg(any(target_os = "linux", target_os = "android"))]
+pub use sys::processor::{get_physical_core_count, get_vendor_id_and_brand};
+
+
 #[cfg(feature = "c-interface")]
 pub use c_interface::*;
 
