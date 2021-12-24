@@ -177,7 +177,7 @@ pub fn logical_core_on() -> std::io::Result<bool> {
         },
     };
 
-    Ok(physical_processors == total_processors)
+    Ok(!(physical_processors == total_processors))
 }
 
 /// Special on Linux to get CPU brand series.
