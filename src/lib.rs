@@ -83,7 +83,6 @@ pub use traits::{
 #[cfg(any(target_os = "linux", target_os = "android"))]
 use sys::processor::{get_physical_core_count, get_vendor_id_and_brand};
 
-
 #[cfg(feature = "c-interface")]
 pub use c_interface::*;
 
@@ -146,7 +145,7 @@ pub fn set_open_files_limit(mut _new_limit: isize) -> bool {
 }
 
 /// special for Linux to read some information and print it.
-pub fn system_info_read(){
+pub fn system_info_read() {
     let mut sys = System::new_all();
     sys.refresh_all();
     println!("System Name {:?}", sys.name().unwrap());
@@ -159,7 +158,6 @@ pub fn system_info_read(){
 
     let (id, brand) = get_vendor_id_and_brand();
     println!("Id {:?} Brand {:?} ", id, brand);
-
 }
 
 /// Special for Linux to check if logic core is on.
@@ -169,53 +167,83 @@ pub fn logical_core_on() -> std::io::Result<bool> {
     sys.refresh_all();
     let total_processors = sys.processors().len();
 
-    let physical_processors  = match get_physical_core_count(){
+    let physical_processors = match get_physical_core_count() {
         Some(processors) => processors,
         None => {
             let std_io_error = std::io::Error::last_os_error();
-            return Err(std_io_error)
-        },
+            return Err(std_io_error);
+        }
     };
 
     Ok(!(physical_processors == total_processors))
 }
 
 /// Special on Linux to get CPU brand series.
-/// If you want to get the whole information, 
+/// If you want to get the whole information,
 /// use `get_vendor_id_and_brand()` instead.
-pub fn get_cpu_series() -> Option<String>{
+pub fn get_cpu_series() -> Option<String> {
     let (_, brand) = get_vendor_id_and_brand();
     let mut split_white_space = brand.split_whitespace();
 
-    fn into_string(s: Option<&str>) -> Option<String>{
-        let string = if let Some(s) = s{
-            String::from(s)
-        } else{
-            return None
-        };
-        Some(string)
-    }
-    
     // as AMD or INTEL
-    let _manufature = into_string( split_white_space.next());
-    
+    let _manufature = into_string(split_white_space.next());
+
     // as EPYC or XEON
-    let _brand = into_string( split_white_space.next());
-    
+    let _brand = into_string(split_white_space.next());
+
     // as E3/E5/E7... for INTEL XEON,  7601/7551/7501... for AMD EPYC
-    let _series = into_string( split_white_space.next());
+    let _series = into_string(split_white_space.next());
 
     // as 32/64/128...
-    let _cores = into_string( split_white_space.next());
+    let _cores = into_string(split_white_space.next());
 
     // as Process, useless str
-    let _processor_str = into_string( split_white_space.next());
+    let _processor_str = into_string(split_white_space.next());
 
     _series
-
 }
 
+/// Special for Linux to check if it's dual path.
+/// Will return Err when "Cannot read `/proc/cpuinfo` file".
+pub fn is_dual_path() -> std::io::Result<bool> {
+    let physical_processors = match get_physical_core_count() {
+        Some(processors) => processors,
+        None => {
+            let std_io_error = std::io::Error::last_os_error();
+            return Err(std_io_error);
+        }
+    };
 
+    let (_, brand) = get_vendor_id_and_brand();
+    let mut split_white_space = brand.split_whitespace();
+
+    let _manufature = into_string(split_white_space.next());
+    let _brand = into_string(split_white_space.next());
+    let _series = into_string(split_white_space.next());
+    let _cores = into_string(split_white_space.next());
+    let _processor_str = into_string(split_white_space.next());
+
+    match _cores {
+        Some(cores_string) => {
+            let cores = cores_string.parse::<usize>().unwrap();
+            Ok(!(cores == physical_processors))
+        }
+        None => {
+            let std_io_error = std::io::Error::last_os_error();
+            return Err(std_io_error);
+        }
+    }
+}
+
+// internal convert function
+fn into_string(s: Option<&str>) -> Option<String> {
+    let string = if let Some(s) = s {
+        String::from(s)
+    } else {
+        return None;
+    };
+    Some(string)
+}
 
 #[cfg(test)]
 mod test {
