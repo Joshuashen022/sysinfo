@@ -79,7 +79,7 @@ pub use sys::{Component, Disk, NetworkData, Networks, Process, Processor, System
 pub use traits::{
     ComponentExt, DiskExt, NetworkExt, NetworksExt, ProcessExt, ProcessorExt, SystemExt, UserExt,
 };
-
+use std::{error, fmt};
 #[cfg(any(target_os = "linux", target_os = "android"))]
 use sys::processor::{get_physical_core_count, get_vendor_id_and_brand};
 
@@ -182,6 +182,8 @@ pub fn logical_core_on() -> std::io::Result<bool> {
 /// If you want to get the whole information,
 /// use `get_vendor_id_and_brand()` instead.
 pub fn get_cpu_series() -> Option<String> {
+    
+    // AMD EPYC 7542 32-Core Processor
     let (_, brand) = get_vendor_id_and_brand();
     let mut split_white_space = brand.split_whitespace();
 
@@ -194,7 +196,7 @@ pub fn get_cpu_series() -> Option<String> {
     // as E3/E5/E7... for INTEL XEON,  7601/7551/7501... for AMD EPYC
     let _series = into_string(split_white_space.next());
 
-    // as 32/64/128...
+    // as 32/64/128-Cores...
     let _cores = into_string(split_white_space.next());
 
     // as Process, useless str
@@ -205,7 +207,7 @@ pub fn get_cpu_series() -> Option<String> {
 
 /// Special for Linux to check if it's dual path.
 /// Will return Err when "Cannot read `/proc/cpuinfo` file".
-pub fn is_dual_path() -> std::io::Result<bool> {
+pub fn is_dual_path() -> Result<bool, std::io::Error> {
     let physical_processors = match get_physical_core_count() {
         Some(processors) => processors,
         None => {
@@ -226,9 +228,40 @@ pub fn is_dual_path() -> std::io::Result<bool> {
     let _processor_str = into_string(split_white_space.next());
 
     match _cores {
-        Some(cores_string) => {
-            println!("cores_string {}",cores_string);
-            let cores = cores_string.parse::<usize>().unwrap();
+        Some(mut cores_string) => {
+            
+            // assert_eq!(cores_string.pop(), Some('e'));
+            // assert_eq!(cores_string.pop(), Some('r'));
+            // assert_eq!(cores_string.pop(), Some('o'));
+            // assert_eq!(cores_string.pop(), Some('C'));
+            // assert_eq!(cores_string.pop(), Some('-'));
+
+            cores_string.pop();
+            cores_string.pop();
+            cores_string.pop();
+            cores_string.pop();
+            match cores_string.pop(){
+                Some(_) => (),
+                None => {
+                    let errors = std::io::Error::new(
+                        std::io::ErrorKind::Other, 
+                        "message is not end with '-Core'"
+                    );
+                    return Err(errors);
+                }
+            };
+
+            let cores = match cores_string.parse::<usize>(){
+                Ok(core) => core,
+                Err(e) => {
+                    let errors = std::io::Error::new(
+                        std::io::ErrorKind::Other, 
+                        format!("String to int error '{}'", e)
+                    );
+                    return Err(errors);
+                }
+            };
+            
             Ok(!(cores == physical_processors))
         }
         None => {
