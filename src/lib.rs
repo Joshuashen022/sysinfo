@@ -215,6 +215,8 @@ pub fn is_dual_path() -> std::io::Result<bool> {
     };
 
     let (_, brand) = get_vendor_id_and_brand();
+    println!("cores_string {}",brand);
+
     let mut split_white_space = brand.split_whitespace();
 
     let _manufature = into_string(split_white_space.next());
@@ -225,6 +227,7 @@ pub fn is_dual_path() -> std::io::Result<bool> {
 
     match _cores {
         Some(cores_string) => {
+            println!("cores_string {}",cores_string);
             let cores = cores_string.parse::<usize>().unwrap();
             Ok(!(cores == physical_processors))
         }
