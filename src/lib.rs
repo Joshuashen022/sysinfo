@@ -217,7 +217,6 @@ pub fn is_dual_path() -> Result<bool, std::io::Error> {
     };
 
     let (_, brand) = get_vendor_id_and_brand();
-    println!("cores_string {}",brand);
 
     let mut split_white_space = brand.split_whitespace();
 
@@ -230,12 +229,6 @@ pub fn is_dual_path() -> Result<bool, std::io::Error> {
     match _cores {
         Some(mut cores_string) => {
             
-            // assert_eq!(cores_string.pop(), Some('e'));
-            // assert_eq!(cores_string.pop(), Some('r'));
-            // assert_eq!(cores_string.pop(), Some('o'));
-            // assert_eq!(cores_string.pop(), Some('C'));
-            // assert_eq!(cores_string.pop(), Some('-'));
-
             cores_string.pop();
             cores_string.pop();
             cores_string.pop();
@@ -261,7 +254,7 @@ pub fn is_dual_path() -> Result<bool, std::io::Error> {
                     return Err(errors);
                 }
             };
-            
+
             Ok(!(cores == physical_processors))
         }
         None => {
