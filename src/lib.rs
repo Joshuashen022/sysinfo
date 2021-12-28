@@ -79,7 +79,7 @@ pub use sys::{Component, Disk, NetworkData, Networks, Process, Processor, System
 pub use traits::{
     ComponentExt, DiskExt, NetworkExt, NetworksExt, ProcessExt, ProcessorExt, SystemExt, UserExt,
 };
-use std::{error, fmt};
+
 #[cfg(any(target_os = "linux", target_os = "android"))]
 use sys::processor::{get_physical_core_count, get_vendor_id_and_brand};
 
@@ -228,7 +228,7 @@ pub fn is_dual_path() -> Result<bool, std::io::Error> {
 
     match _cores {
         Some(mut cores_string) => {
-            
+
             cores_string.pop();
             cores_string.pop();
             cores_string.pop();
